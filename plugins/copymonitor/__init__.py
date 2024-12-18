@@ -51,7 +51,7 @@ class CopyMonitor(_PluginBase):
     # 插件图标
     plugin_icon = "Linkace_CC.png"
     # 插件版本
-    plugin_version = "1.3"
+    plugin_version = "1.0"
     # 插件作者
     plugin_author = "xp9477"
     # 作者主页
@@ -201,7 +201,7 @@ class CopyMonitor(_PluginBase):
             "mode": self._mode,
             "monitor_dirs": self._monitor_dirs,
             "include_keywords": self._include_keywords,
-            "cron": self._cron
+            "cron": self._cron,
         })
 
     @eventmanager.register(EventType.PluginAction)
@@ -214,12 +214,12 @@ class CopyMonitor(_PluginBase):
             if not event_data or event_data.get("action") != "realtime_copy":
                 return
             self.post_message(channel=event.event_data.get("channel"),
-                            title="开始实时复制 ...",
-                            userid=event.event_data.get("user"))
+                              title="开始实时复制 ...",
+                              userid=event.event_data.get("user"))
         self.sync_all()
         if event:
             self.post_message(channel=event.event_data.get("channel"),
-                            title="实时复制完成！", userid=event.event_data.get("user"))
+                              title="实时复制完成！", userid=event.event_data.get("user"))
 
     def sync_all(self):
         """
@@ -230,17 +230,6 @@ class CopyMonitor(_PluginBase):
         for mon_path in self._dirconf.keys():
             # 遍历目录下所有文件
             for file_path in SystemUtils.list_files(Path(mon_path), ['.*']):
-                # 检查是否包含关键字
-                if self._include_keywords:
-                    match_found = False
-                    for keyword in self._include_keywords.split("\n"):
-                        if keyword and re.findall(keyword, str(file_path), re.IGNORECASE):
-                            match_found = True
-                            break
-                    if not match_found:
-                        logger.debug(f"{file_path} 不包含任何关键字，不处理")
-                        continue
-                # 处理匹配的文件
                 self.__handle_file(event_path=str(file_path), mon_path=mon_path)
         logger.info("全量实时复制完成！")
 
@@ -259,11 +248,13 @@ class CopyMonitor(_PluginBase):
 
     @staticmethod
     def _copy_file(src_path: Path, mon_path: str,
-                   target_path: Path) -> Tuple[bool, str]:
+                   target_path: Path, transfer_type: str = "copy") -> Tuple[bool, str]:
         """
-        对文件做复制处理
+        对文件做纯复制处理，不做识别重命名，则监控模块调用
+        :param : 来源渠道
         :param src_path: 源文件
         :param target_path: 目标目录
+        :param transfer_type: 转移方式
         """
         # 计算相对路径
         try:
@@ -277,8 +268,11 @@ class CopyMonitor(_PluginBase):
             # 创建目标目录
             if not new_path.parent.exists():
                 new_path.parent.mkdir(parents=True, exist_ok=True)
-            # 复制
-            code, errmsg = SystemUtils.copy(src_path, new_path)
+            # 转移
+            if transfer_type == "copy":
+                code, errmsg = SystemUtils.copy(src_path, new_path)
+            else:
+                code, errmsg = SystemUtils.link(src_path, new_path)
             return True if code == 0 else False, errmsg
 
     def __handle_file(self, event_path: str, mon_path: str):
@@ -293,6 +287,7 @@ class CopyMonitor(_PluginBase):
                 return
             # 全程加锁
             with lock:
+
                 # 回收站及隐藏的文件不处理
                 if event_path.find('/@Recycle/') != -1 \
                         or event_path.find('/#recycle/') != -1 \
@@ -301,16 +296,12 @@ class CopyMonitor(_PluginBase):
                     logger.debug(f"{event_path} 是回收站或隐藏的文件")
                     return
 
-                # 检查是否包含关键字,不包含则不处理
+                # 命中关键字进行复制
                 if self._include_keywords:
-                    match_found = False
                     for keyword in self._include_keywords.split("\n"):
                         if keyword and re.findall(keyword, event_path, re.IGNORECASE):
-                            match_found = True
+                            logger.info(f"{event_path} 命中过滤关键字 {keyword}")
                             break
-                    if not match_found:
-                        logger.info(f"{event_path} 不包含任何关键字，不处理")
-                        return
 
                 # 查询转移目的目录
                 target: Path = self._dirconf.get(mon_path)
@@ -320,7 +311,7 @@ class CopyMonitor(_PluginBase):
 
                 # 开始复制
                 state, errmsg = self._copy_file(src_path=file_path, mon_path=mon_path,
-                                              target_path=target)
+                                                target_path=target, transfer_type="copy")
 
                 if not state:
                     # 转移失败
@@ -499,7 +490,7 @@ class CopyMonitor(_PluginBase):
                                         }
                                     }
                                 ]
-                            }
+                            },
                         ]
                     },
                     {
@@ -541,7 +532,7 @@ class CopyMonitor(_PluginBase):
                                             'model': 'include_keywords',
                                             'label': '包含关键词',
                                             'rows': 2,
-                                            'placeholder': '每一行一个关键词，只处理包含关键词的文件，不区分大小写'
+                                            'placeholder': '每一行一个关键词，不区分大小写，为空则全部复制'
                                         }
                                     }
                                 ]
@@ -557,7 +548,7 @@ class CopyMonitor(_PluginBase):
             "mode": "fast",
             "monitor_dirs": "",
             "include_keywords": "",
-            "cron": ""
+            "cron": "",
         }
 
     def get_page(self) -> List[dict]:
