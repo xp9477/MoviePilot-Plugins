@@ -1,5 +1,5 @@
 {
-    "LinkMonitor": {
+    "CopyMonitor": {
         "name": "实时复制",
         "description": "监控目录文件变化，实时复制。",
         "labels": "文件整理",
