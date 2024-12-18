@@ -51,7 +51,7 @@ class CopyMonitor(_PluginBase):
     # 插件图标
     plugin_icon = "Linkace_CC.png"
     # 插件版本
-    plugin_version = "1.4"
+    plugin_version = "1.5"
     # 插件作者
     plugin_author = "xp9477"
     # 作者主页
@@ -302,7 +302,6 @@ class CopyMonitor(_PluginBase):
                     for keyword in self._include_keywords.split("\n"):
                         if keyword and re.findall(keyword, event_path, re.IGNORECASE):
                             keyword_matched = True
-                            logger.info(f"{event_path} 命中关键字 {keyword}，跳过处理")
                             break
                     
                     if not keyword_matched:
@@ -538,7 +537,7 @@ class CopyMonitor(_PluginBase):
                                             'model': 'include_keywords',
                                             'label': '包含关键词',
                                             'rows': 2,
-                                            'placeholder': '每一行一个关键词，不区分大小写，为空则全部复制'
+                                            'placeholder': '每一行一个关键词(正则)，不区分大小写，为空则全部复制'
                                         }
                                     }
                                 ]
