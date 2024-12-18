@@ -3,13 +3,13 @@
         "name": "实时复制",
         "description": "监控目录文件变化，实时复制。",
         "labels": "文件整理",
-        "version": "1.0",
+        "version": "1.4",
         "icon": "Linkace_CC.png",
         "author": "xp9477",
         "level": 1,
         "v2": true,
         "history": {
-            "v1.3": "监控目录文件变化，实时复制。"
+            "v1.4": "监控目录文件变化，实时复制。"
         }
     }
 }

@@ -51,7 +51,7 @@ class CopyMonitor(_PluginBase):
     # 插件图标
     plugin_icon = "Linkace_CC.png"
     # 插件版本
-    plugin_version = "1.0"
+    plugin_version = "1.4"
     # 插件作者
     plugin_author = "xp9477"
     # 作者主页
