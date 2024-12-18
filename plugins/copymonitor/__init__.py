@@ -73,7 +73,7 @@ class CopyMonitor(_PluginBase):
 
     # 转移方式
     _monitor_dirs = ""
-    _include_keywords = ""
+    _include_filetypes = ""
 
     # 模式 compatibility/fast
     _mode = "fast"
@@ -96,7 +96,7 @@ class CopyMonitor(_PluginBase):
             self._onlyonce = config.get("onlyonce")
             self._mode = config.get("mode")
             self._monitor_dirs = config.get("monitor_dirs") or ""
-            self._include_keywords = config.get("include_keywords") or ""
+            self._include_filetypes = config.get("include_filetypes") or ""
             self._cron = config.get("cron")
 
         # 停止现有任务
@@ -200,7 +200,7 @@ class CopyMonitor(_PluginBase):
             "onlyonce": self._onlyonce,
             "mode": self._mode,
             "monitor_dirs": self._monitor_dirs,
-            "include_keywords": self._include_keywords,
+            "include_filetypes": self._include_filetypes,
             "cron": self._cron,
         })
 
@@ -296,16 +296,19 @@ class CopyMonitor(_PluginBase):
                     logger.debug(f"{event_path} 是回收站或隐藏的文件")
                     return
 
-                # 命中关键字进行复制
-                if self._include_keywords:
-                    keyword_matched = False
-                    for keyword in self._include_keywords.split("\n"):
-                        if keyword and re.findall(keyword, event_path, re.IGNORECASE):
-                            keyword_matched = True
+                # 检查文件类型
+                if self._include_filetypes:
+                    filetype_matched = False
+                    file_ext = file_path.suffix.lower()
+                    if file_ext.startswith('.'):
+                        file_ext = file_ext[1:]
+                    for filetype in self._include_filetypes.split("\n"):
+                        if filetype and filetype.strip().lower() == file_ext:
+                            filetype_matched = True
                             break
                     
-                    if not keyword_matched:
-                        logger.info(f"{event_path} 未命中任何关键字，跳过处理")
+                    if not filetype_matched:
+                        logger.info(f"{event_path} 不是指定的文件类型，跳过处理")
                         return
 
                 # 查询转移目的目录
@@ -534,10 +537,10 @@ class CopyMonitor(_PluginBase):
                                     {
                                         'component': 'VTextarea',
                                         'props': {
-                                            'model': 'include_keywords',
-                                            'label': '包含关键词',
+                                            'model': 'include_filetypes',
+                                            'label': '包含文件类型',
                                             'rows': 2,
-                                            'placeholder': '每一行一个关键词(正则)，不区分大小写，为空则全部复制'
+                                            'placeholder': '每行一个文件扩展名(不含点号)为空则复制所有类型'
                                         }
                                     }
                                 ]
@@ -552,7 +555,7 @@ class CopyMonitor(_PluginBase):
             "onlyonce": False,
             "mode": "fast",
             "monitor_dirs": "",
-            "include_keywords": "",
+            "include_filetypes": "",
             "cron": "",
         }
 
