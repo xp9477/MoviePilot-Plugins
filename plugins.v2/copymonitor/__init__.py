@@ -51,7 +51,7 @@ class CopyMonitor(_PluginBase):
     # 插件图标
     plugin_icon = "Linkace_CC.png"
     # 插件版本
-    plugin_version = "1.2"
+    plugin_version = "1.3"
     # 插件作者
     plugin_author = "xp9477"
     # 作者主页
@@ -211,15 +211,15 @@ class CopyMonitor(_PluginBase):
         """
         if event:
             event_data = event.event_data
-            if not event_data or event_data.get("action") != "realtime_link":
+            if not event_data or event_data.get("action") != "realtime_copy":
                 return
             self.post_message(channel=event.event_data.get("channel"),
-                              title="开始实时复制 ...",
-                              userid=event.event_data.get("user"))
+                            title="开始实时复制 ...",
+                            userid=event.event_data.get("user"))
         self.sync_all()
         if event:
             self.post_message(channel=event.event_data.get("channel"),
-                              title="实时复制完成！", userid=event.event_data.get("user"))
+                            title="实时复制完成！", userid=event.event_data.get("user"))
 
     def sync_all(self):
         """
@@ -230,6 +230,17 @@ class CopyMonitor(_PluginBase):
         for mon_path in self._dirconf.keys():
             # 遍历目录下所有文件
             for file_path in SystemUtils.list_files(Path(mon_path), ['.*']):
+                # 检查是否包含关键字
+                if self._include_keywords:
+                    match_found = False
+                    for keyword in self._include_keywords.split("\n"):
+                        if keyword and re.findall(keyword, str(file_path), re.IGNORECASE):
+                            match_found = True
+                            break
+                    if not match_found:
+                        logger.debug(f"{file_path} 不包含任何关键字，不处理")
+                        continue
+                # 处理匹配的文件
                 self.__handle_file(event_path=str(file_path), mon_path=mon_path)
         logger.info("全量实时复制完成！")
 
@@ -344,18 +355,18 @@ class CopyMonitor(_PluginBase):
         :return: 命令关键字、事件、描述、附带数据
         """
         return [{
-            "cmd": "/realtime_copy", 
+            "cmd": "/realtime_copy",
             "event": EventType.PluginAction,
             "desc": "实时复制",
             "category": "管理",
             "data": {
-                "action": "realtime_link"
+                "action": "realtime_copy"
             }
         }]
 
     def get_api(self) -> List[Dict[str, Any]]:
         return [{
-            "path": "/realtime_link",
+            "path": "/realtime_copy",
             "endpoint": self.sync,
             "methods": ["GET"],
             "summary": "实时复制",
@@ -375,7 +386,7 @@ class CopyMonitor(_PluginBase):
         """
         if self._enabled and self._cron:
             return [{
-                "id": "LinkMonitor",
+                "id": "CopyMonitor",
                 "name": "全量复制定时服务",
                 "trigger": CronTrigger.from_crontab(self._cron),
                 "func": self.sync_all,
