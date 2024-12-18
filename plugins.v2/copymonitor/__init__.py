@@ -49,7 +49,7 @@ class LinkMonitor(_PluginBase):
     # 插件描述
     plugin_desc = "监控目录文件变化，按原文件名复制。"
     # 插件图标
-    plugin_icon = "Linkace_C.png"
+    plugin_icon = "Linkace_CC.png"
     # 插件版本
     plugin_version = "1.0"
     # 插件作者
