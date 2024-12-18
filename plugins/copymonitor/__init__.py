@@ -302,10 +302,11 @@ class CopyMonitor(_PluginBase):
                     for keyword in self._include_keywords.split("\n"):
                         if keyword and re.findall(keyword, event_path, re.IGNORECASE):
                             keyword_matched = True
+                            logger.info(f"{event_path} 命中关键字 {keyword}，跳过处理")
                             break
                     
                     if not keyword_matched:
-                        logger.info(f"{event_path} 未命中任何过滤关键字，跳过处理")
+                        logger.info(f"{event_path} 未命中任何关键字，跳过处理")
                         return
 
                 # 查询转移目的目录
