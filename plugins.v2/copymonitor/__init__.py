@@ -43,7 +43,7 @@ class FileMonitorHandler(FileSystemEventHandler):
                                 mon_path=self._watch_path, event_path=event.dest_path)
 
 
-class LinkMonitor(_PluginBase):
+class CopyMonitor(_PluginBase):
     # 插件名称
     plugin_name = "实时复制"
     # 插件描述
