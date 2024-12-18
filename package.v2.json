@@ -1,0 +1,14 @@
+{
+    "CopyMonitor": {
+        "name": "实时复制",
+        "description": "监控目录文件变化，实时复制。",
+        "labels": "文件整理",
+        "version": "1.0",
+        "icon": "Linkace_C.png",
+        "author": "xp9477",
+        "level": 1,
+        "history": {
+            "v1.0": "监控目录文件变化，实时复制。"
+        }
+    }
+}
