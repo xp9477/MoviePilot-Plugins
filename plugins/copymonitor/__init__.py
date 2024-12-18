@@ -51,7 +51,7 @@ class CopyMonitor(_PluginBase):
     # 插件图标
     plugin_icon = "Linkace_CC.png"
     # 插件版本
-    plugin_version = "1.1"
+    plugin_version = "1.2"
     # 插件作者
     plugin_author = "xp9477"
     # 作者主页
@@ -70,6 +70,7 @@ class CopyMonitor(_PluginBase):
     _notify = False
     _onlyonce = False
     _cron = None
+
     # 转移方式
     _monitor_dirs = ""
     _include_keywords = ""
@@ -200,7 +201,7 @@ class CopyMonitor(_PluginBase):
             "mode": self._mode,
             "monitor_dirs": self._monitor_dirs,
             "include_keywords": self._include_keywords,
-            "cron": self._cron,
+            "cron": self._cron
         })
 
     @eventmanager.register(EventType.PluginAction)
@@ -210,7 +211,7 @@ class CopyMonitor(_PluginBase):
         """
         if event:
             event_data = event.event_data
-            if not event_data or event_data.get("action") != "realtime_copy":
+            if not event_data or event_data.get("action") != "realtime_link":
                 return
             self.post_message(channel=event.event_data.get("channel"),
                               title="开始实时复制 ...",
@@ -247,13 +248,11 @@ class CopyMonitor(_PluginBase):
 
     @staticmethod
     def _copy_file(src_path: Path, mon_path: str,
-                   target_path: Path, transfer_type: str = "copy") -> Tuple[bool, str]:
+                   target_path: Path) -> Tuple[bool, str]:
         """
-        对文件做纯复制处理，不做识别重命名，则监控模块调用
-        :param : 来源渠道
+        对文件做复制处理
         :param src_path: 源文件
         :param target_path: 目标目录
-        :param transfer_type: 转移方式
         """
         # 计算相对路径
         try:
@@ -267,11 +266,8 @@ class CopyMonitor(_PluginBase):
             # 创建目标目录
             if not new_path.parent.exists():
                 new_path.parent.mkdir(parents=True, exist_ok=True)
-            # 转移
-            if transfer_type == "copy":
-                code, errmsg = SystemUtils.copy(src_path, new_path)
-            else:
-                code, errmsg = SystemUtils.link(src_path, new_path)
+            # 复制
+            code, errmsg = SystemUtils.copy(src_path, new_path)
             return True if code == 0 else False, errmsg
 
     def __handle_file(self, event_path: str, mon_path: str):
@@ -286,7 +282,6 @@ class CopyMonitor(_PluginBase):
                 return
             # 全程加锁
             with lock:
-
                 # 回收站及隐藏的文件不处理
                 if event_path.find('/@Recycle/') != -1 \
                         or event_path.find('/#recycle/') != -1 \
@@ -295,14 +290,16 @@ class CopyMonitor(_PluginBase):
                     logger.debug(f"{event_path} 是回收站或隐藏的文件")
                     return
 
-                # 未命中关键字不处理
+                # 检查是否包含关键字,不包含则不处理
                 if self._include_keywords:
+                    match_found = False
                     for keyword in self._include_keywords.split("\n"):
                         if keyword and re.findall(keyword, event_path, re.IGNORECASE):
-                            pass
-                        else:
-                            logger.info(f"{event_path} 未命中关键字, 不处理")
-                            return
+                            match_found = True
+                            break
+                    if not match_found:
+                        logger.info(f"{event_path} 不包含任何关键字，不处理")
+                        return
 
                 # 查询转移目的目录
                 target: Path = self._dirconf.get(mon_path)
@@ -312,7 +309,7 @@ class CopyMonitor(_PluginBase):
 
                 # 开始复制
                 state, errmsg = self._copy_file(src_path=file_path, mon_path=mon_path,
-                                                target_path=target, transfer_type="copy")
+                                              target_path=target)
 
                 if not state:
                     # 转移失败
@@ -347,18 +344,18 @@ class CopyMonitor(_PluginBase):
         :return: 命令关键字、事件、描述、附带数据
         """
         return [{
-            "cmd": "/realtime_copy",
+            "cmd": "/realtime_copy", 
             "event": EventType.PluginAction,
             "desc": "实时复制",
             "category": "管理",
             "data": {
-                "action": "realtime_copy"
+                "action": "realtime_link"
             }
         }]
 
     def get_api(self) -> List[Dict[str, Any]]:
         return [{
-            "path": "/realtime_copy",
+            "path": "/realtime_link",
             "endpoint": self.sync,
             "methods": ["GET"],
             "summary": "实时复制",
@@ -378,7 +375,7 @@ class CopyMonitor(_PluginBase):
         """
         if self._enabled and self._cron:
             return [{
-                "id": "CopyMonitor",
+                "id": "LinkMonitor",
                 "name": "全量复制定时服务",
                 "trigger": CronTrigger.from_crontab(self._cron),
                 "func": self.sync_all,
@@ -533,7 +530,7 @@ class CopyMonitor(_PluginBase):
                                             'model': 'include_keywords',
                                             'label': '包含关键词',
                                             'rows': 2,
-                                            'placeholder': '每一行一个关键词, 不区分大小写, 未设置则全部复制'
+                                            'placeholder': '每一行一个关键词，只处理包含关键词的文件，不区分大小写'
                                         }
                                     }
                                 ]
@@ -549,7 +546,7 @@ class CopyMonitor(_PluginBase):
             "mode": "fast",
             "monitor_dirs": "",
             "include_keywords": "",
-            "cron": "",
+            "cron": ""
         }
 
     def get_page(self) -> List[dict]:
