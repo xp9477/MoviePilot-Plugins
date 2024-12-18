@@ -298,10 +298,15 @@ class CopyMonitor(_PluginBase):
 
                 # 命中关键字进行复制
                 if self._include_keywords:
+                    keyword_matched = False
                     for keyword in self._include_keywords.split("\n"):
                         if keyword and re.findall(keyword, event_path, re.IGNORECASE):
-                            logger.info(f"{event_path} 命中过滤关键字 {keyword}")
+                            keyword_matched = True
                             break
+                    
+                    if not keyword_matched:
+                        logger.info(f"{event_path} 未命中任何过滤关键字，跳过处理")
+                        return
 
                 # 查询转移目的目录
                 target: Path = self._dirconf.get(mon_path)
