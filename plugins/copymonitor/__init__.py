@@ -70,7 +70,6 @@ class CopyMonitor(_PluginBase):
     _notify = False
     _onlyonce = False
     _cron = None
-    _size = 0
     # 转移方式
     _monitor_dirs = ""
     _include_keywords = ""
@@ -247,7 +246,7 @@ class CopyMonitor(_PluginBase):
             self.__handle_file(event_path=event_path, mon_path=mon_path)
 
     @staticmethod
-    def _link_file(src_path: Path, mon_path: str,
+    def _copy_file(src_path: Path, mon_path: str,
                    target_path: Path, transfer_type: str = "copy") -> Tuple[bool, str]:
         """
         对文件做纯复制处理，不做识别重命名，则监控模块调用
@@ -312,7 +311,7 @@ class CopyMonitor(_PluginBase):
                     return
 
                 # 开始复制
-                state, errmsg = self._link_file(src_path=file_path, mon_path=mon_path,
+                state, errmsg = self._copy_file(src_path=file_path, mon_path=mon_path,
                                                 target_path=target, transfer_type="copy")
 
                 if not state:
